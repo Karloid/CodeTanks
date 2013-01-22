@@ -8,7 +8,7 @@ public final class MyStrategy implements Strategy {
     long meters;
     double minAgle = PI / 180;
     double angleToTarget;
-    String targetName = "SmartGuy";
+    String targetName; //= "SmartGuy";
     Unit moveTarget;
     Tank self;
     World world;
