@@ -118,8 +118,8 @@ public final class MyStrategy implements Strategy {
     private boolean noTeammateOnFireLine(Unit unit) {
         double distance = self.getDistanceTo(unit);
         for (Tank tank : tanks.values()) {
-            if (tank.isTeammate() && self.getDistanceTo(tank) < distance && Math.abs(self.getTurretAngleTo(tank)) < minAgle * 8) {
-                System.out.println("Teammate on fire line!");
+            if ((tank.isTeammate() || tank.getCrewHealth() == 0 || tank.getHullDurability() == 0) && self.getDistanceTo(tank) < distance && Math.abs(self.getTurretAngleTo(tank)) < minAgle * 4) {
+                System.out.println("No fire!");
                 return false;
             }
         }
