@@ -146,17 +146,7 @@ public final class MyStrategy implements Strategy {
                 moveTo(moveTarget);
                 moved = true;
             }
-                    /*(bonus.getType().equals(BonusType.MEDIKIT) && angle == minAngleToMedkit) {
-                moveTarget = bonus;
-                moveTargets.add(moveTarget.getId());
-                moveTo(moveTarget);
-                moved = true;
-            } else if (angle == minAngleToBonus) {
-                moveTarget = bonus;
-                moveTargets.add(moveTarget.getId());
-                moveTo(moveTarget);
-                moved = true;
-            }            */
+            //TODO приоритетный подбор медкитов
         }
 
         if (!moved) {
@@ -176,12 +166,12 @@ public final class MyStrategy implements Strategy {
                     return false;
                 }
                 ;
-            }   /*
+            }   
             for (Bonus bonus : world.getBonuses()) {
                 if (checkObstacle(bonus)) {
                     return false;
                 };
-            } */
+            } 
         }
         return true;
     }
@@ -246,10 +236,6 @@ public final class MyStrategy implements Strategy {
         return true;
     }
 
-    public double checkPoint(double x, double y, double x1, double x2, double y1, double y2) {
-        return (y1 - y2) * x + (x1 - x2) * y + (x1 * y2 - x2 * y1);
-    }
-
     private void log(String message) {
         System.out.println(message);
     }
@@ -260,7 +246,7 @@ public final class MyStrategy implements Strategy {
                 return false;
             }
         }
-        return true;  //To change body of created methods use File | Settings | File Templates.
+        return true;  
     }
 
     private void moveBack() {
