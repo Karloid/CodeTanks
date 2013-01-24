@@ -6,12 +6,14 @@ import java.util.HashMap;
 import static java.lang.StrictMath.PI;
 
 public final class MyStrategy implements Strategy {
-    private static final double MAX_DISTANCE_TO_BONUS = 700;
+    private static final double MAX_DISTANCE_TO_BONUS = 500;
     private static final int EVADE_COOLDOWN = 300;
     private static final int EVADE_TIME = 100;
+    private static final double SHELL_SPEED_NEAR = 13.25;
+    private static final double SHELL_SPEED_MID = 13.25;
+    private static final double SHELL_SPEED_FAR = 13.25;
     double minAgle = PI / 180;
     double angleToTarget;
-    String targetName;// = "SmartGuy";
     static Long mainTarget;
     Long secondaryTarget;
     Unit moveTarget;
@@ -39,6 +41,52 @@ public final class MyStrategy implements Strategy {
         this.move = move;
         initCollections();
         move();
+        //testPhysic();
+       // positionPrediction();
+    }
+
+    private void positionPrediction() {
+
+        Position pos = getPredictPosition(mainTarget);
+        if (self.getRemainingReloadingTime() >= self.getReloadingTime() - 1) {
+            log("[positionPrediction] SHOT");
+        }/*
+        log("[positionPrediction] distance " + distanceToTarget + " tick elapsed: " + elapsedTimeToContact);
+        log("[positionPrediction] time contact: " + (world.getTick() + elapsedTimeToContact));
+
+
+        log("[positionPrediction]! Predicted tankPosition:! x:" + predictX + " y:" +
+                predictY);
+        log("[positionPrediction] tank current pos x:" + target.getX() + " y:" + target.getY());
+        log("[positionPrediction] current tick: " + world.getTick());
+        */
+    }
+
+    private Position getPredictPosition(Long targetId) {
+        Tank target = tanks.get(targetId);
+        double distanceToTarget = self.getDistanceTo(target);
+
+        double elapsedTimeToContact = distanceToTarget / SHELL_SPEED_NEAR;
+        double predictX = target.getX() + target.getSpeedX() * elapsedTimeToContact;
+        double predictY = target.getY() + target.getSpeedY() * elapsedTimeToContact;
+        return new Position(predictX, predictY);
+    }
+
+    private void testPhysic() {
+        if (self.getRemainingReloadingTime() >= self.getReloadingTime() - 1 || true) {
+            for (Shell shell : world.getShells()) {
+                if (shell.getPlayerName().equals(self.getPlayerName())) {
+                    Tank target = tanks.get(mainTarget);
+                    double elapsedTicks = (target.getX() - shell.getX()) / shell.getSpeedX();
+                    log("[shellSpeedTesting] id: " + shell.getId() + " speedX speedY " + shell.getSpeedX() + " " + shell.getSpeedY());
+                    log("[shellSpeedTesting] tick elapsed: " + elapsedTicks + ", tick contact: " + (world.getTick() + elapsedTicks));
+                    log("[shellSpeedTesting] absolute shell speed: " + shell.getDistanceTo(target) / elapsedTicks);
+                    log("[shellSpeedTesting] current tick: " + world.getTick());
+                    log("[shellSpeedTesting] current distaste: " + shell.getDistanceTo(target));
+                    log("[shellSpeedTesting]");
+                }
+            }
+        }
     }
 
     private void initCollections() {
@@ -51,7 +99,7 @@ public final class MyStrategy implements Strategy {
             obstacles.add(unit);
         }
         for (Tank tank : world.getTanks()) {
-            if (tank.isTeammate() && self.getId() != tank.getId()) {
+            if ((tank.isTeammate() || !isAlive(tank)) && self.getId() != tank.getId()) {
                 obstacles.add(tank);
             }
         }
@@ -59,22 +107,33 @@ public final class MyStrategy implements Strategy {
 
     private void move() {
         shootEnemy();
-        pickUpBonus();
+        if (!pickUpBonus()) {
+            maneuver();
+        }
+        ;
+    }
+
+    private void maneuver() {
+        //log("[maneuver] do maneuver");
+        moveTo(world.getWidth() - 150, world.getHeight() / (self.getTeammateIndex() + 1.3));
     }
 
     private void shootEnemy() {
         if ((mainTarget != null && !isAlive(tanks.get(mainTarget))) || mainTarget == null) {
             mainTarget = findNewTarget();
         }
-        log("[shootEnemy] mainTarget: " + mainTarget);
+        //log("[shootEnemy] mainTarget: " + mainTarget);
         if (mainTarget != null && !checkObstacle(obstacles, tanks.get(mainTarget))) {
             shootTank(tanks.get(mainTarget));
         } else {
-            log("[shootEnemy] dont shoot mainTarget! have Obstacles!");
-            if (secondaryTarget == null) {
+            //   log("[shootEnemy] dont shoot mainTarget! have Obstacles!");
+            if (secondaryTarget == null || !isAlive(tanks.get(secondaryTarget))) {
                 secondaryTarget = findNewTarget();
             }
-            shootTank(tanks.get(secondaryTarget));
+            if (!shootTank(tanks.get(secondaryTarget))) {
+                turnTurret(mainTarget);
+            }
+            ;
         }
            /*
 
@@ -98,23 +157,36 @@ public final class MyStrategy implements Strategy {
             */
     }
 
-    private void shootTank(Tank tank) {
+    private void turnTurret(Long mainTarget) {
+        if (mainTarget == null) return;
+        move.setTurretTurn(self.getTurretAngleTo(tanks.get(mainTarget)));
+    }
+
+    private boolean shootTank(Tank tank) {
         if (tank == null) {
-            return;
+            return false;
         }
-        angleToTarget = self.getTurretAngleTo(tank);
+        //TODO исправить ошибку с тем что мы целимся не туда куда стрелям, для этого нужно отрефакторить методы проверки препятствий для поддрежки координат
+        Position predictPos = getPredictPosition(tank);
+       // angleToTarget = self.getTurretAngleTo(tank);
+        angleToTarget = self.getTurretAngleTo(predictPos.predictX, predictPos.predictY);
         move.setTurretTurn(angleToTarget);
         if (Math.abs(angleToTarget) > minAgle) {
             move.setFireType(FireType.NONE);
         } else {
             move.setFireType(FireType.PREMIUM_PREFERRED);
         }
+        return true;
+    }
+
+    private Position getPredictPosition(Unit tank) {
+        return getPredictPosition(tank.getId());
     }
 
     private boolean checkObstacle(ArrayList<Unit> units, Unit target) {
         for (Unit unit : units) {
             if (checkObstacle(unit, target)) {
-                log("[checkObstacle] have obstacle!: " + unit.getId() + " type: " + unit.getClass());
+                //        log("[checkObstacle] have obstacle!: " + unit.getId() + " type: " + unit.getClass());
                 return true;
             }
         }
@@ -144,7 +216,7 @@ public final class MyStrategy implements Strategy {
         return tankId;
     }
 
-    private void pickUpBonus() {
+    private boolean pickUpBonus() {
         //  log("[pickUpBonus] distance to 0x0 " + self.getDistanceTo(0, 0) + " self position " + self.getX() + " " + self.getY());
         Bonus[] bonuses = world.getBonuses();
         double minDistanceToBonus = 2000;
@@ -224,10 +296,7 @@ public final class MyStrategy implements Strategy {
                 moved = true;
             }            */
         }
-
-        if (!moved) {
-            moveBack();
-        }
+        return moved;
     }
 
     private boolean checkObstacles(Unit unit) {
@@ -316,16 +385,7 @@ public final class MyStrategy implements Strategy {
     }
 
     private void log(String message) {
-        System.out.println("tankId: " + self.getId() + " message:" + message);
-    }
-
-    private boolean targetIsDead() {
-        for (Tank tank : world.getTanks()) {
-            if (tank.getPlayerName().equals(targetName) && tank.getCrewHealth() != 0) {
-                return false;
-            }
-        }
-        return true;
+        System.out.println("tankIndex: " + self.getTeammateIndex() + " message:" + message);
     }
 
     private void moveBack() {
@@ -334,17 +394,21 @@ public final class MyStrategy implements Strategy {
     }
 
     private void moveTo(Unit unit) {
-        double angleToUnit = self.getAngleTo(unit);
+        moveTo(unit.getX(), unit.getY());
+    }
+
+    private void moveTo(double x, double y) {
+        double angleToUnit = self.getAngleTo(x, y);
         // log("move to" + unit.getId() + " type:" + ((Bonus) unit).getType() + " distance: " + self.getDistanceTo(unit) + " pos x  y" + unit.getX() + " " + unit.getY());
 
         if (evade()) {
             return;
         }
 
-        /*
+
         if (unstuck()) {
             return;
-        } */
+        }
         //  log("[moveTo] tank: " + self.getId() + "Angle to unit: " + ((Bonus) unit).getType() + " : " + angleToUnit);
 
         if (Math.abs(angleToUnit) > PI / 2 && !checkEvadeArea()) {
@@ -458,5 +522,28 @@ public final class MyStrategy implements Strategy {
     @Override
     public TankType selectTank(int tankIndex, int teamSize) {
         return TankType.MEDIUM;
+    }
+
+    private class Point {
+        public Point(double x, double y) {
+        }
+    }
+
+    private class Position {
+        private final double predictX;
+        private final double predictY;
+
+        public Position(double predictX, double predictY) {
+            this.predictX = predictX;
+            this.predictY = predictY;
+        }
+
+        public double getPredictX() {
+            return predictX;
+        }
+
+        public double getPredictY() {
+            return predictY;
+        }
     }
 }
