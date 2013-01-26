@@ -308,7 +308,7 @@ public final class MyStrategy implements Strategy {
         Tank target = tanks.get(targetId);
         double distanceToTarget = self.getDistanceTo(target);
 
-        double elapsedTimeToContact = (distanceToTarget - TURRET_LENGTH) / SHELL_SPEED_NEAR;
+        double elapsedTimeToContact = (distanceToTarget - self.getVirtualGunLength()) / SHELL_SPEED_NEAR;
         double predictX = target.getX() + target.getSpeedX() * elapsedTimeToContact;
         double predictY = target.getY() + target.getSpeedY() * elapsedTimeToContact;
         return new Position(predictX, predictY);
