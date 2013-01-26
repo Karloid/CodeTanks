@@ -35,6 +35,7 @@ public final class MyStrategy implements Strategy {
 
     private int lastTimeEvade;
     private ArrayList<Unit> obstacles;
+    private static String maneuverArea;
 
     MyStrategy() {
 
@@ -370,7 +371,20 @@ public final class MyStrategy implements Strategy {
 
     private void maneuver() {
         //log("[maneuver] do maneuver");
-        double pointX = world.getWidth() - 150;
+        if (maneuverArea == null) {
+            if (self.getX() > world.getWidth() / 2) {
+                maneuverArea = "RIGHT_SIDE";
+            } else {
+                maneuverArea = "LEFT_SIDE";
+            }
+        }
+
+        double pointX;
+        if (maneuverArea.equals("RIGHT_SIDE")) {
+            pointX = world.getWidth() - 150;
+        } else {
+            pointX = 150;
+        }
         double pointY = world.getHeight() / (self.getTeammateIndex() + 1.3);
         if (self.getDistanceTo(pointX, pointY) > 120) {
             moveTo(pointX, pointY);
