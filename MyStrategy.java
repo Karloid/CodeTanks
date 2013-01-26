@@ -47,7 +47,7 @@ public final class MyStrategy implements Strategy {
         this.move = move;
         initCollections();
         move();
-        testShellPhysic();
+        //testShellPhysic();
         // testCoordinates();
         // positionPrediction();
     }
