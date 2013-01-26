@@ -308,7 +308,7 @@ public final class MyStrategy implements Strategy {
         Tank target = tanks.get(targetId);
         double distanceToTarget = self.getDistanceTo(target);
 
-        double elapsedTimeToContact = (distanceToTarget - self.getVirtualGunLength()) / SHELL_SPEED_NEAR;
+        double elapsedTimeToContact = (distanceToTarget - TURRET_LENGTH) / SHELL_SPEED_NEAR;
         double predictX = target.getX() + target.getSpeedX() * elapsedTimeToContact;
         double predictY = target.getY() + target.getSpeedY() * elapsedTimeToContact;
         return new Position(predictX, predictY);
@@ -370,7 +370,31 @@ public final class MyStrategy implements Strategy {
 
     private void maneuver() {
         //log("[maneuver] do maneuver");
-        moveTo(world.getWidth() - 100, world.getHeight() / (self.getTeammateIndex() + 1.3));
+        double pointX = world.getWidth() - 150;
+        double pointY = world.getHeight() / (self.getTeammateIndex() + 1.3);
+        if (self.getDistanceTo(pointX, pointY) > 120) {
+            moveTo(pointX, pointY);
+        } else {
+            turnTo(mainTarget);
+        }
+    }
+
+    private void turnTo(Long mainTarget) {
+        if (mainTarget == null) {
+            return;
+        }
+        double angleToUnit = self.getAngleTo(tanks.get(mainTarget)) / ONE_DEGREE;
+        if (Math.abs(angleToUnit) > minAngle) {
+            if (angleToUnit < 0) {
+                move.setLeftTrackPower(-1D);
+                move.setRightTrackPower(0.8D);
+                log("TURN TO LEFT " + angleToUnit);
+            } else {
+                move.setLeftTrackPower(0.8D);
+                move.setRightTrackPower(-1D);
+                log("TURN TO RIGHT" + angleToUnit);
+            }
+        }
     }
 
     private void shootEnemy() {
@@ -504,11 +528,11 @@ public final class MyStrategy implements Strategy {
         //TODO исправить ошибку с тем что мы целимся не туда куда стрелям, для этого нужно отрефакторить методы проверки препятствий для поддрежки координат
         Position predictPos = getPredictPosition(tank);
         if (checkObstacle(obstacles, predictPos)) {
-            log("[shootTank]SHOOT CANCEL " + predictPos);
+            //  log("[shootTank]SHOOT CANCEL " + predictPos);
             move.setFireType(FireType.NONE);
             return false;
         }
-        log("[shootTank] TARGET CLEAR TO SHOOT " + predictPos);
+        //  log("[shootTank] TARGET CLEAR TO SHOOT " + predictPos);
         // angleToTarget = self.getTurretAngleTo(tank);
         angleToTarget = self.getTurretAngleTo(predictPos.x, predictPos.y);
         move.setTurretTurn(angleToTarget);
@@ -680,7 +704,7 @@ public final class MyStrategy implements Strategy {
     }
 
     private void log(String message) {
-        System.out.println(world.getTick() + " message:" + message);
+        System.out.println(world.getTick() + " " + self.getTeammateIndex() + " message:" + message);
     }
 
     private void moveBack() {
