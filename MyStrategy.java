@@ -1,5 +1,10 @@
 import model.*;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -7,8 +12,8 @@ import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.atan2;
 
 public final class MyStrategy implements Strategy {
-    private static final double MAX_DISTANCE_TO_BONUS = 500;
-    private static final int EVADE_COOLDOWN = 300;
+    private static final double MAX_DISTANCE_TO_BONUS = 600;
+    private static final int EVADE_COOLDOWN = 50;
     private static final int EVADE_TIME = 100;
     private static final double SHELL_SPEED_NEAR = 13.25;
     private static final double SHELL_SPEED_MID = 13.25;
@@ -43,14 +48,34 @@ public final class MyStrategy implements Strategy {
 
     @Override
     public void move(Tank self, World world, Move move) {
+        move.setFireType(FireType.NONE);
         this.self = self;
         this.world = world;
         this.move = move;
         initCollections();
         move();
-        //testShellPhysic();
+        // testShellPhysic();
         // testCoordinates();
+        //testCoordinates2();
         // positionPrediction();
+    }
+
+    private void testCoordinates2() {
+        Tank tank = tanks.get(mainTarget);
+        double y = tank.getY();
+        double x = tank.getX();
+        System.out.println("tank x y: " + tank.getX() + " " + y);
+        double radius = Math.sqrt(tank.getWidth() * tank.getWidth() + tank.getHeight() * tank.getHeight()) / 2;
+        System.out.println("tank radius: " + radius);
+        double angleToX1 = Math.asin(tank.getHeight() / tank.getWidth());
+        System.out.println("tank angle 1: " + angleToX1 / ONE_DEGREE);
+        double sumAngle = angleToX1 + tank.getAngle();
+
+        double tanSquare = Math.pow(Math.tan(sumAngle), 2);
+        double x1 = (-4 * y * Math.tan(sumAngle) + Math.sqrt(tanSquare * (1 + y * y) - y * y * radius * radius)) / (2 * (radius * radius - tanSquare)) + x;
+        double x2 = (-4 * y * Math.tan(sumAngle) - Math.sqrt(tanSquare * (1 + y * y) - y * y * radius * radius)) / (2 * (radius * radius - tanSquare)) + x;
+        System.out.println(" x1, x2 : " + x1 + " " + x2);
+        System.out.println();
     }
 
     private void testCoordinates() {
@@ -58,9 +83,9 @@ public final class MyStrategy implements Strategy {
         //  log("[testCoordinates] self x y " + tank.getX() + " " + tank.getY());
         //   log("[testCoordinates] angle " + tank.getAngle() / ONE_DEGREE);
         /*
-        * 1 - 4
-        * |   |
-        * 2 - 3*/
+        * 1 - - 4
+        * |     |
+        * 2 - - 3*/
 
 
         double x = tank.getX();
@@ -329,7 +354,7 @@ public final class MyStrategy implements Strategy {
                     log("[shellSpeedTesting] current SELF distaste: " + self.getDistanceTo(target));
                     log("[shellSpeedTesting] turret lengths: " + (self.getDistanceTo(target) - shell.getDistanceTo(target)));
                        */
-                    log("[shellSpeedTesting]");
+                    log("[shellSpeedTesting] w h" + shell.getWidth() + " " + shell.getHeight());
                     log("[shellSpeedTesting] *********************************");
                     log("[shellSpeedTesting] *********************************");
                     log("[shellSpeedTesting] *********************************");
@@ -362,11 +387,12 @@ public final class MyStrategy implements Strategy {
     }
 
     private void move() {
+
         shootEnemy();
+       // maneuver();
         if (!pickUpBonus()) {
             maneuver();
         }
-        ;
     }
 
     private void maneuver() {
@@ -381,16 +407,67 @@ public final class MyStrategy implements Strategy {
 
         double pointX;
         if (maneuverArea.equals("RIGHT_SIDE")) {
-            pointX = world.getWidth() - 150;
+            pointX = world.getWidth() - 100;
         } else {
-            pointX = 150;
+            pointX = 100;
         }
         double pointY = world.getHeight() / (self.getTeammateIndex() + 1.3);
-        if (self.getDistanceTo(pointX, pointY) > 120) {
+        if (self.getDistanceTo(pointX, pointY) > 250) {
+            log("[maneuver] move to : " + pointX + " " + pointY);
             moveTo(pointX, pointY);
         } else {
-            turnTo(mainTarget);
+            turnSideTo(mainTarget);
+            //turnTo(mainTarget);
         }
+    }
+
+    private void turnSideTo(Long mainTarget) {
+        if (evade()) {
+
+            return;
+        }
+        if (mainTarget == null) {
+            return;
+        }
+        double angleToUnit = self.getAngleTo(tanks.get(mainTarget)) / ONE_DEGREE;
+        log("");
+        log("90  - angleToUnit : " + (90 - angleToUnit));
+        log(" angleToUnit : " + angleToUnit);
+        if (angleToUnit > 0) {
+            if (Math.abs(90 - angleToUnit) > 10) {
+                if (angleToUnit > 90) {
+                    turnRight();
+                    log("TURN TO RIGHT " + angleToUnit);
+                } else {
+                    turnLeft();
+                    log("TURN TO LEFT " + angleToUnit);
+                }
+            } else {
+                stopMove();
+            }
+        } else {
+            if (Math.abs(90 + angleToUnit) > 10) {
+                if (angleToUnit > -90) {
+                    turnLeft();
+                    log("TURN TO RIGHT " + angleToUnit);
+                } else {
+                    turnRight();
+                    log("TURN TO LEFT " + angleToUnit);
+                }
+            } else {
+                stopMove();
+            }
+        }
+    }
+
+    private void stopMove() {
+        move.setLeftTrackPower(0D);
+        move.setRightTrackPower(0D);
+    }
+
+    private void turnRight() {
+        move.setLeftTrackPower(0.8D);
+        move.setRightTrackPower(-1D);
     }
 
     private void turnTo(Long mainTarget) {
@@ -400,15 +477,18 @@ public final class MyStrategy implements Strategy {
         double angleToUnit = self.getAngleTo(tanks.get(mainTarget)) / ONE_DEGREE;
         if (Math.abs(angleToUnit) > minAngle) {
             if (angleToUnit < 0) {
-                move.setLeftTrackPower(-1D);
-                move.setRightTrackPower(0.8D);
+                turnLeft();
                 log("TURN TO LEFT " + angleToUnit);
             } else {
-                move.setLeftTrackPower(0.8D);
-                move.setRightTrackPower(-1D);
+                turnRight();
                 log("TURN TO RIGHT" + angleToUnit);
             }
         }
+    }
+
+    private void turnLeft() {
+        move.setLeftTrackPower(-1D);
+        move.setRightTrackPower(0.8D);
     }
 
     private void shootEnemy() {
@@ -488,6 +568,24 @@ public final class MyStrategy implements Strategy {
         double py1 = self.getY();
         double px2 = targetX;
         double py2 = targetY;
+        Position pos1 = new Position();
+        Position pos2 = new Position();
+        Position pos3 = new Position();
+        Position pos4 = new Position();
+
+        getUnitCorner(unit, pos1, pos2, pos3, pos4);
+        /*
+        if (unit instanceof Obstacle){
+            printCheckObstaclesDebugMessages(unit, px1, py1, px2, py2, x, y, h, w, x1, x2, x3, x4, y1, y2, y3, y4, pos1, pos2, pos3, pos4);
+        }
+                    */
+        //log(" self - " + px1 + " " + py1 + "   target - " + px2 + " " + py2);
+        //  return checkSquare(x1, x2, x3, x4, y1, y2, y3, y4, px1, py1, px2, py2);
+
+        return checkSquare(pos1.getX(), pos2.getX(), pos3.getX(), pos4.getX(), pos1.getY(), pos2.getY(), pos3.getY(), pos4.getY(), px1, py1, px2, py2);
+    }
+
+    private void getUnitCorner(Unit unit, Position pos1, Position pos2, Position pos3, Position pos4) {
         double x = unit.getX();
         double y = unit.getY();
         double h = unit.getHeight();
@@ -500,20 +598,11 @@ public final class MyStrategy implements Strategy {
         double y2 = y + h / 2;
         double y3 = y + h / 2;
         double y4 = y - h / 2;
-
-        Position pos1 = getTankPosition(unit, x1, y1);
-        Position pos2 = getTankPosition(unit, x2, y2);
-        Position pos3 = getTankPosition(unit, x3, y3);
-        Position pos4 = getTankPosition(unit, x4, y4);
-        /*
-        if (unit instanceof Obstacle){
-            printCheckObstaclesDebugMessages(unit, px1, py1, px2, py2, x, y, h, w, x1, x2, x3, x4, y1, y2, y3, y4, pos1, pos2, pos3, pos4);
-        }
-                    */
-        //log(" self - " + px1 + " " + py1 + "   target - " + px2 + " " + py2);
-        //  return checkSquare(x1, x2, x3, x4, y1, y2, y3, y4, px1, py1, px2, py2);
-
-        return checkSquare(pos1.getX(), pos2.getX(), pos3.getX(), pos4.getX(), pos1.getY(), pos2.getY(), pos3.getY(), pos4.getY(), px1, py1, px2, py2);
+        pos1.setCoordinates(getTankPosition(unit, x1, y1));
+        pos2.setCoordinates(getTankPosition(unit, x2, y2));
+        pos3.setCoordinates(getTankPosition(unit, x3, y3));
+        pos4.setCoordinates(getTankPosition(unit, x4, y4));
+        // log("[getUnitCorner] + "  + pos1.getX());
     }
 
     private void printCheckObstaclesDebugMessages(Unit unit, double px1, double py1, double px2, double py2, double x, double y, double h, double w, double x1, double x2, double x3, double x4, double y1, double y2, double y3, double y4, Position pos1, Position pos2, Position pos3, Position pos4) {
@@ -544,6 +633,7 @@ public final class MyStrategy implements Strategy {
         if (checkObstacle(obstacles, predictPos)) {
             //  log("[shootTank]SHOOT CANCEL " + predictPos);
             move.setFireType(FireType.NONE);
+            //    log("[shootEnemy] OBSTACLES set NONE " + checkObstacle(obstacles, predictPos));
             return false;
         }
         //  log("[shootTank] TARGET CLEAR TO SHOOT " + predictPos);
@@ -552,10 +642,70 @@ public final class MyStrategy implements Strategy {
         move.setTurretTurn(angleToTarget);
         if (Math.abs(angleToTarget) > minAngle) {
             move.setFireType(FireType.NONE);
+            //     log("[shootEnemy] set NONE CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
         } else {
             move.setFireType(FireType.PREMIUM_PREFERRED);
+            //       log("[shootEnemy] set PREMIUM_PREFERRED + CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
+            //  drawSnapshot(obstacles, predictPos, new Position(tank.getX(), tank.getY()));
         }
         return true;
+    }
+
+    private void drawSnapshot(ArrayList<Unit> obstacles, Position predictPos, Position currentPosition) {
+        log("[drawSnapshot] " + predictPos);
+        if (self.getRemainingReloadingTime() != 0 && self.getRemainingReloadingTime() + 3 < self.getReloadingTime()) {
+            return;
+        }
+
+        BufferedImage snapshot = new BufferedImage((int) world.getWidth(), (int) world.getHeight(), BufferedImage.TYPE_INT_RGB);
+        setBackgroundColor(snapshot, Color.gray);
+        drawObstacles(obstacles, snapshot);
+        drawDot(currentPosition, snapshot, Color.darkGray, 5);
+        drawDot(predictPos, snapshot, Color.red, 3);
+        drawDot(new Position(self.getX(), self.getY()), snapshot, Color.green, 5);
+        String fileName = "shoots/" + world.getTick() + ".png";
+        try {
+            ImageIO.write(snapshot, "png", new File(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Image save to " + fileName);
+    }
+
+    private void drawObstacles(ArrayList<Unit> obstacles, BufferedImage image) {
+        for (Unit unit : obstacles) {
+            Position pos1 = new Position();
+            Position pos2 = new Position();
+            Position pos3 = new Position();
+            Position pos4 = new Position();
+            getUnitCorner(unit, pos1, pos2, pos3, pos4);
+            int cornerSize = 3;
+            drawDot(pos1, image, Color.orange, cornerSize);
+            drawDot(pos2, image, Color.orange, cornerSize);
+            drawDot(pos3, image, Color.orange, cornerSize);
+            drawDot(pos4, image, Color.orange, cornerSize);
+            drawDot(new Position(unit.getX(), unit.getY()), image, Color.orange, 4);
+        }
+    }
+
+    private void drawDot(Position position, BufferedImage image, Color color, int dotSize) {
+        for (int x = -dotSize; x <= dotSize; x++) {
+            for (int y = -dotSize; y <= dotSize; y++) {
+                try {
+
+                    image.setRGB((int) position.getX() + x, (int) position.getY() + y, color.getRGB());
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
+    private void setBackgroundColor(BufferedImage image, Color color) {
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                image.setRGB(x, y, color.getRGB());
+            }
+        }
     }
 
     private Position getPredictPosition(Unit tank) {
@@ -699,12 +849,13 @@ public final class MyStrategy implements Strategy {
     public boolean segmentsIntersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
         double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
         if (d == 0) return false;
-        double xi = ((x3 - x4) * (x1 * y2 - y1 * x2) - (x1 - x2) * (x3 * y4 - y3 * x4)) / d;
-        double yi = ((y3 - y4) * (x1 * y2 - y1 * x2) - (y1 - y2) * (x3 * y4 - y3 * x4)) / d;
-        if (xi < Math.min(x1, x2) || xi > Math.max(x1, x2)) return false;
-        if (xi < Math.min(x3, x4) || xi > Math.max(x3, x4)) return false;
-        if (yi < Math.min(y1, y2) || yi > Math.max(y1, y2)) return false;
-        if (yi < Math.min(y3, y4) || yi > Math.max(y3, y4)) return false;
+        double xi = Math.floor(((x3 - x4) * (x1 * y2 - y1 * x2) - (x1 - x2) * (x3 * y4 - y3 * x4)) / d);
+        double yi = Math.floor(((y3 - y4) * (x1 * y2 - y1 * x2) - (y1 - y2) * (x3 * y4 - y3 * x4)) / d);
+        if (xi < Math.min(x1, x2) - 15 || xi > Math.max(x1, x2) + 15) return false;
+        if (xi < Math.min(x3, x4) - 15 || xi > Math.max(x3, x4) + 15) return false;
+        if (yi < Math.min(y1, y2) - 15 || yi > Math.max(y1, y2) + 15) return false;
+        if (yi < Math.min(y3, y4) - 15 || yi > Math.max(y3, y4) + 15) return false;
+        /*Косяки с вычислениями в double*/
        /* log("[segmentsIntersect] OBSTACLE FIND!");
         log("[segmentsIntersect] x1 y1 x2 y2 x3 x4 : " + x1 + " " + y1 + " " + x2 + " " + y2 + " " + x3 + " " + y3 + " " + x4 + " " + y4);
 
@@ -718,7 +869,7 @@ public final class MyStrategy implements Strategy {
     }
 
     private void log(String message) {
-        System.out.println(world.getTick() + " " + self.getTeammateIndex() + " message:" + message);
+      //  System.out.println(world.getTick() + " " + self.getTeammateIndex() + " message:" + message);
     }
 
     private void moveBack() {
@@ -754,12 +905,12 @@ public final class MyStrategy implements Strategy {
 
             } else {
                 if (angleToUnit > 0) {
-                    move.setLeftTrackPower(-1D);
+                    move.setLeftTrackPower(0D);
                     move.setRightTrackPower(1D);
                     //            log("[moveToBonus] BACK LEFT");
                 } else {
                     move.setLeftTrackPower(1D);
-                    move.setRightTrackPower(-1D);
+                    move.setRightTrackPower(0D);
                     //         log("[moveToBonus] BACK RIGHT");
                 }
             }
@@ -771,10 +922,10 @@ public final class MyStrategy implements Strategy {
             } else {
                 if (angleToUnit > 0) {
                     move.setLeftTrackPower(1D);
-                    move.setRightTrackPower(-1D);
+                    move.setRightTrackPower(0D);
                     //           log("[moveToBonus] RIGHT");
                 } else {
-                    move.setLeftTrackPower(-1D);
+                    move.setLeftTrackPower(0D);
                     move.setRightTrackPower(1D);
                     //          log("[moveToBonus] LEFT");
                 }
@@ -784,7 +935,7 @@ public final class MyStrategy implements Strategy {
 
     private boolean evade() {
         if (world.getTick() - lastTimeEvade < EVADE_COOLDOWN && world.getTick() - lastTimeEvade > EVADE_TIME) {
-            //    log("[evade] COOLDOWN");
+            log("[evade] COOLDOWN");
             return false;
         }
         if (checkEvadeArea()) {
@@ -792,7 +943,7 @@ public final class MyStrategy implements Strategy {
         }
         for (Shell shell : world.getShells()) {
             if (Math.abs(shell.getAngleTo(self)) < minAngle * 2) {
-                //      log("EVADE SHELL FAST FORWARD " + self.getId());
+                log("EVADE SHELL FAST FORWARD " + self.getId());
                 move.setLeftTrackPower(1D);
                 move.setRightTrackPower(1D);
                 if (world.getTick() - lastTimeEvade > EVADE_TIME) {
@@ -802,9 +953,10 @@ public final class MyStrategy implements Strategy {
                 return true;
             }
         }
+
         for (Tank tank : world.getTanks()) {
-            if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 80 && isAlive(tank)) {
-                //  log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
+            if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 65 && isAlive(tank)) {
+                log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
                 move.setLeftTrackPower(1D);
                 move.setRightTrackPower(1D);
                 unstuck();
@@ -863,12 +1015,17 @@ public final class MyStrategy implements Strategy {
     }
 
     private class Position {
-        private final double x;
-        private final double y;
+        private double x;
+        private double y;
 
-        public Position(double predictX, double predictY) {
-            this.x = predictX;
-            this.y = predictY;
+        public Position(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public Position() {
+            this.x = 0;
+            this.y = 0;
         }
 
         public double getX() {
@@ -881,6 +1038,11 @@ public final class MyStrategy implements Strategy {
 
         public String toString() {
             return " x: " + this.getX() + " y:" + this.getY();
+        }
+
+        public void setCoordinates(Position position) {
+            this.x = position.getX();
+            this.y = position.getY();
         }
     }
 }
