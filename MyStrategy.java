@@ -100,64 +100,17 @@ public final class MyStrategy implements Strategy {
         double y2 = y + h / 2;
         double y3 = y + h / 2;
         double y4 = y - h / 2;
-        //TODO сделать циклы коллекции преферанс
-  /*
-        Position pos1 = getCornerCurrentPosition(tank, x1, y1);
-        Position pos2 = getCornerCurrentPosition(tank, x2, y2);
-        Position pos3 = getCornerCurrentPosition(tank, x3, y3);
-        Position pos4 = getCornerCurrentPosition(tank, x4, y4);
-       */
+
         Position pos1 = getTankPosition(tank, x1, y1);
         Position pos2 = getTankPosition(tank, x2, y2);
         Position pos3 = getTankPosition(tank, x3, y3);
         Position pos4 = getTankPosition(tank, x4, y4);
-        // System.out.println("***");
-       /*
-        for (int i = -360; i < 360; i++) {
-            System.out.println("i: = " + i + " pos: " + getDotPosition(tank, x1, y1, i));
 
-        }                  */
-        /*
-        log("[testCoordinates] SELF x y  " + x + " " + y);
-        log("[testCoordinates] STANDART x1 y1  " + x1 + " " + y1);
-        log("[testCoordinates] CURRENT: " + getTankPosition(tank, x1, y1));
-        log("***");
-        */
-              /*
-        log("[testCoordinates] SELF x y  " + x + " " + y);
-        log("[testCoordinates] STANDART x1 y1  " + x1 + " " + y1);
-        log("[testCoordinates] CURRENT  x1 y1  " + (pos1.getX()) + " " + (pos1.getY()));
-        log("[testCoordinates]  - - -");
-        log("[testCoordinates] STANDART x2 y2  " + x2 + " " + y2);
-        log("[testCoordinates] CURRENT  x2 y2  " + (pos2.getX()) + " " + (pos2.getY()));
-        log("[testCoordinates]  - - -");
-        log("[testCoordinates] STANDART x3 y3  " + x3 + " " + y3);
-        log("[testCoordinates] CURRENT  x3 y3  " + (pos3.getX()) + " " + (pos3.getY()));
-        log("[testCoordinates]  - - -");
-
-        log("[testCoordinates] STANDART x4 y4  " + x4 + " " + y4);
-        log("[testCoordinates] CURRENT  x4 y4  " + (pos4.getX()) + " " + (pos4.getY()));
-                                                                          */
-        // epick
         printPostionMatrix(pos1, pos2, pos3, pos4, new Position(x, y));
-
-        // log("[testCoordinates] distanceToTopRightCorner " + distanceToCurrentCorner); // 54
-       /* log("[testCoordinates] tank.getAngleTo(x, y) " + tank.getAngleTo(x, y)/ONE_DEGREE);
-        log("[testCoordinates] angleToCurrentCorner " + angleToCurrentCorner);        // 33.69
-
-*/
-        // log("[testCoordinates]  ");
     }
 
     private void printPostionMatrix(Position pos1, Position pos2, Position pos3, Position pos4, Position centr) {
-        // System.out.println();
-        /*
-        log("Pos: " + getMatrixPos(pos1));
-        log("Pos: " + getMatrixPos(pos2));
-        log("Pos: " + getMatrixPos(pos3));
-        log("Pos: " + getMatrixPos(pos4));
-        log("centr: " + getMatrixPos(centr));
-                           */
+
         for (int yi = 0; yi < Math.floor(world.getHeight() / MATRIX_DENSITY); yi++) {
             for (int xi = 0; xi < Math.floor(world.getWidth() / MATRIX_DENSITY); xi++) {
                 if (yi >= floorPosY(centr) + 10) {
@@ -185,12 +138,8 @@ public final class MyStrategy implements Strategy {
                     System.out.print("  ");
                 }
             }
-
             System.out.println();
         }
-
-        //   System.out.println();
-        //    System.out.println();
     }
 
     private String getMatrixPos(Position pos1) {
@@ -216,11 +165,6 @@ public final class MyStrategy implements Strategy {
         double tankX = tank.getX();
         double tankY = tank.getY();
         double angleToCurrentCorner = (angleToCornerStatic / ONE_DEGREE + tank.getAngle() / ONE_DEGREE) * ONE_DEGREE;
-        /*double currentX = Math.cos(angleToCurrentCorner) * 100 + distanceToCorner;
-        double currentY = Math.sin(angleToCurrentCorner) * 100 + distanceToCorner;     */
-        //  double currentX = distanceToCorner * Math.sin(angleToCurrentCorner*ONE_DEGREE);
-
-        //   return new Position(currentX + tank.getX(), currentY + tank.getY());
         double rx = oldX - tankX;
         double ry = oldY - tankY;
         double alpha = angleToCurrentCorner - angleToCornerStatic;
@@ -239,56 +183,17 @@ public final class MyStrategy implements Strategy {
         double distanceToCorner = tank.getDistanceTo(oldX, oldY);
         double angleToCornerStatic = getAngle(tank.getX(), tank.getY(), oldX, oldY);
         double angleToCurrentCorner = (angleToCornerStatic / ONE_DEGREE + tank.getAngle() / ONE_DEGREE) * ONE_DEGREE;
-        double tankX = tank.getX();
-        double tankY = tank.getY();
-        double currentAngle = angle * ONE_DEGREE;
-        /*double currentX = Math.cos(angleToCurrentCorner) * 100 + distanceToCorner;
-        double currentY = Math.sin(angleToCurrentCorner) * 100 + distanceToCorner;     */
-        //  double currentX = distanceToCorner * Math.sin(angleToCurrentCorner*ONE_DEGREE);
-
-        //   return new Position(currentX + tank.getX(), currentY + tank.getY());
-                                        /*
-        double rx = oldX - tankX;
-        double ry = oldY - tankY;
-        double alpha = currentAngle;
-        double c = Math.cos(alpha);
-        double s = Math.sin(alpha);   */
-        // double currentX = tankX + rx * c - ry * s;
-        // double currentY = tankY + rx * s - ry * c;
-        /*      WORK
-        double currentX = Math.round (Math.cos(currentAngle) * distanceToCorner);
-        double currentY =Math.round(Math.sin(currentAngle) * distanceToCorner);
-          */
         double currentX = Math.round(Math.cos(angleToCurrentCorner) * distanceToCorner);
         double currentY = Math.round(Math.sin(angleToCurrentCorner) * distanceToCorner);
         return new Position(currentX, currentY);
     }
 
     private Position getTankPosition(Unit unit, double oldX, double oldY) {
-
         double distanceToCorner = unit.getDistanceTo(oldX, oldY);
         double angleToCornerStatic = getAngle(unit.getX(), unit.getY(), oldX, oldY);
         double angleToCurrentCorner = (angleToCornerStatic / ONE_DEGREE + unit.getAngle() / ONE_DEGREE) * ONE_DEGREE;
         double tankX = unit.getX();
         double tankY = unit.getY();
-        //  double currentAngle = angle * ONE_DEGREE;
-        /*double currentX = Math.cos(angleToCurrentCorner) * 100 + distanceToCorner;
-        double currentY = Math.sin(angleToCurrentCorner) * 100 + distanceToCorner;     */
-        //  double currentX = distanceToCorner * Math.sin(angleToCurrentCorner*ONE_DEGREE);
-
-        //   return new Position(currentX + unit.getX(), currentY + unit.getY());
-                                        /*
-        double rx = oldX - tankX;
-        double ry = oldY - tankY;
-        double alpha = currentAngle;
-        double c = Math.cos(alpha);
-        double s = Math.sin(alpha);   */
-        // double currentX = tankX + rx * c - ry * s;
-        // double currentY = tankY + rx * s - ry * c;
-        /*      WORK
-        double currentX = Math.round (Math.cos(currentAngle) * distanceToCorner);
-        double currentY =Math.round(Math.sin(currentAngle) * distanceToCorner);
-          */
         double currentX = Math.round(Math.cos(angleToCurrentCorner) * distanceToCorner);
         double currentY = Math.round(Math.sin(angleToCurrentCorner) * distanceToCorner);
         return new Position(tankX + currentX, currentY + tankY);
@@ -318,16 +223,7 @@ public final class MyStrategy implements Strategy {
         Position pos = getPredictPosition(mainTarget);
         if (self.getRemainingReloadingTime() >= self.getReloadingTime() - 1) {
             log("[positionPrediction] SHOT");
-        }/*
-        log("[positionPrediction] distance " + distanceToTarget + " tick elapsed: " + elapsedTimeToContact);
-        log("[positionPrediction] time contact: " + (world.getTick() + elapsedTimeToContact));
-
-
-        log("[positionPrediction]! Predicted tankPosition:! x:" + x + " y:" +
-                y);
-        log("[positionPrediction] tank current pos x:" + target.getX() + " y:" + target.getY());
-        log("[positionPrediction] current tick: " + world.getTick());
-        */
+        }
     }
 
     private Position getPredictPosition(Long targetId) {
@@ -506,27 +402,6 @@ public final class MyStrategy implements Strategy {
         if (!shootTank(tanks.get(secondaryTarget))) {
             turnTurret(mainTarget);
         }
-
-           /*
-
-        for (Tank tank : tanks.values())
-            if (!tank.isTeammate() && (tank.getCrewHealth() != 0 && tank.getHullDurability() != 0) && (mainTarget == null || ((Long) tank.getId()).equals(mainTarget))) {
-                if (tank.getPlayerName().equals(targetName) || targetIsDead()) {
-                    angleToTarget = self.getTurretAngleTo(tank);
-                    move.setTurretTurn(angleToTarget);
-                    if (Math.abs(angleToTarget) > minAngle) {
-                        move.setFireType(FireType.NONE);
-                    } else {
-                        mainTarget = tank.getId();
-                        if (checkObstacles(tank)) {
-                            move.setFireType(FireType.PREMIUM_PREFERRED);
-                        } else {
-                            move.setFireType(FireType.NONE);
-                        }
-                    }
-                }
-            }
-            */
     }
 
     private void turnTurret(Long mainTarget) {
@@ -534,30 +409,7 @@ public final class MyStrategy implements Strategy {
         move.setTurretTurn(self.getTurretAngleTo(tanks.get(mainTarget)));
     }
 
-    /*
-   private boolean checkObstacles(Unit unit) {
-       double distance = self.getDistanceTo(unit);
-       for (Tank tank : tanks.values()) {
-           if ((tank.isTeammate() || tank.getCrewHealth() == 0 || tank.getHullDurability() == 0) && self.getDistanceTo(tank) < distance && Math.abs(self.getTurretAngleTo(tank)) < minAngle * 4) {
-               // log("obstacle on fire line");
-               return false;
-           }
-           for (Obstacle obstacle : world.getObstacles()) {
-               if (checkObstacle(obstacle, null, null)) {
-                   return false;
-               }
-               ;
-           }
-            /*
-           for (Bonus bonus : world.getBonuses()) {
-               if (checkObstacle(bonus)) {
-                   return false;
-               };
-           } */
-    /*    }
-        return true;
-    }
-     */
+
     private boolean checkObstacle(Unit unit, double targetX, double targetY) {
     /*
     1   4
@@ -572,16 +424,7 @@ public final class MyStrategy implements Strategy {
         Position pos2 = new Position();
         Position pos3 = new Position();
         Position pos4 = new Position();
-
         getUnitCorner(unit, pos1, pos2, pos3, pos4);
-        /*
-        if (unit instanceof Obstacle){
-            printCheckObstaclesDebugMessages(unit, px1, py1, px2, py2, x, y, h, w, x1, x2, x3, x4, y1, y2, y3, y4, pos1, pos2, pos3, pos4);
-        }
-                    */
-        //log(" self - " + px1 + " " + py1 + "   target - " + px2 + " " + py2);
-        //  return checkSquare(x1, x2, x3, x4, y1, y2, y3, y4, px1, py1, px2, py2);
-
         return checkSquare(pos1.getX(), pos2.getX(), pos3.getX(), pos4.getX(), pos1.getY(), pos2.getY(), pos3.getY(), pos4.getY(), px1, py1, px2, py2);
     }
 
@@ -602,26 +445,17 @@ public final class MyStrategy implements Strategy {
         pos2.setCoordinates(getTankPosition(unit, x2, y2));
         pos3.setCoordinates(getTankPosition(unit, x3, y3));
         pos4.setCoordinates(getTankPosition(unit, x4, y4));
-        // log("[getUnitCorner] + "  + pos1.getX());
     }
 
     private void printCheckObstaclesDebugMessages(Unit unit, double px1, double py1, double px2, double py2, double x, double y, double h, double w, double x1, double x2, double x3, double x4, double y1, double y2, double y3, double y4, Position pos1, Position pos2, Position pos3, Position pos4) {
         log("unit " + unit.getClass());
         log("RESULT: " + checkSquare(pos1.getX(), pos2.getX(), pos3.getX(), pos4.getX(), pos1.getY(), pos2.getY(), pos3.getY(), pos4.getY(), px1, py1, px2, py2));
         log("unit x: " + x + " y " + y + " h w " + h + " " + w);
-        /*
-        log("old " + x1 + " " + y1);
-        log("old " + x2 + " " + y2);
-        log("old " + x3 + " " + y3);
-        log("old " + x4 + " " + y4);
-        log("++++ ");
-              */
         log("p1 " + pos1.getX() + " " + pos1.getY());
         log("p2 " + pos2.getX() + " " + pos2.getY());
         log("p3 " + pos3.getX() + " " + pos3.getY());
         log("p4 " + pos4.getX() + " " + pos4.getY());
         System.out.println();
-        //printPostionMatrix(pos1, pos2, pos3, pos4, new Position(x, y));
     }
 
     private boolean shootTank(Tank tank) {
@@ -782,18 +616,10 @@ public final class MyStrategy implements Strategy {
                     !(bonus.getType().equals(BonusType.REPAIR_KIT) && self.getHullDurability() == self.getHullMaxDurability())) {
                 minAngleToBonus = angle;
             }
-
             if (angle > maxAngleToBonus && !moveTargets.contains(bonus.getId()) &&
                     !(bonus.getType().equals(BonusType.REPAIR_KIT) && self.getHullDurability() == self.getHullMaxDurability())) {
                 maxAngleToBonus = angle;
             }
-
-    /*     if (bonus.getType().equals(BonusType.MEDIKIT) && angle < minAngleToMedkit && self.getCrewHealth() != 100 && !moveTargets.contains(bonus.getId())) {
-                minAngleToMedkit = angle;
-            }
-            if (bonus.getType().equals(BonusType.MEDIKIT) && angle > maxAngleToMedkit && self.getCrewHealth() != 100 && !moveTargets.contains(bonus.getId())) {
-                maxAngleToMedkit = angle;
-            }*/
         }
         if (bonusNoExists && pickUpTarget != null) {
             moveTargets.remove(pickUpTarget.getId());
@@ -823,17 +649,6 @@ public final class MyStrategy implements Strategy {
                 moved = true;
             }
             //TODO Приоритет на подбор медкитов
-                    /*(bonus.getType().equals(BonusType.MEDIKIT) && angle == minAngleToMedkit) {
-                pickUpTarget = bonus;
-                moveTargets.add(pickUpTarget.getId());
-                moveTo(pickUpTarget);
-                moved = true;
-            } else if (angle == minAngleToBonus) {
-                pickUpTarget = bonus;
-                moveTargets.add(pickUpTarget.getId());
-                moveTo(pickUpTarget);
-                moved = true;
-            }            */
         }
         return moved;
     }
@@ -935,7 +750,7 @@ public final class MyStrategy implements Strategy {
 
     private boolean evade() {
         if (world.getTick() - lastTimeEvade < EVADE_COOLDOWN && world.getTick() - lastTimeEvade > EVADE_TIME) {
-            log("[evade] COOLDOWN");
+          //  log("[evade] COOLDOWN");
             return false;
         }
         if (checkEvadeArea()) {
@@ -943,7 +758,7 @@ public final class MyStrategy implements Strategy {
         }
         for (Shell shell : world.getShells()) {
             if (Math.abs(shell.getAngleTo(self)) < minAngle * 2) {
-                log("EVADE SHELL FAST FORWARD " + self.getId());
+             //   log("EVADE SHELL FAST FORWARD " + self.getId());
                 doEvade();
                 if (world.getTick() - lastTimeEvade > EVADE_TIME) {
                     lastTimeEvade = world.getTick();
@@ -955,7 +770,7 @@ public final class MyStrategy implements Strategy {
 
         for (Tank tank : world.getTanks()) {
             if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 65 && isAlive(tank)) {
-                log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
+             //   log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
                 doEvade();
                 unstuck();
                 return true;
