@@ -389,7 +389,7 @@ public final class MyStrategy implements Strategy {
     private void move() {
 
         shootEnemy();
-       // maneuver();
+        // maneuver();
         if (!pickUpBonus()) {
             maneuver();
         }
@@ -869,7 +869,7 @@ public final class MyStrategy implements Strategy {
     }
 
     private void log(String message) {
-      //  System.out.println(world.getTick() + " " + self.getTeammateIndex() + " message:" + message);
+        //  System.out.println(world.getTick() + " " + self.getTeammateIndex() + " message:" + message);
     }
 
     private void moveBack() {
@@ -918,7 +918,7 @@ public final class MyStrategy implements Strategy {
             //    log("[moveToBonus] move forward");
             if (minAngle * 10 > Math.abs(angleToUnit)) {
                 move.setLeftTrackPower(1D);
-                move.setRightTrackPower(1D);
+                move.setLeftTrackPower(1D);
             } else {
                 if (angleToUnit > 0) {
                     move.setLeftTrackPower(1D);
@@ -944,8 +944,7 @@ public final class MyStrategy implements Strategy {
         for (Shell shell : world.getShells()) {
             if (Math.abs(shell.getAngleTo(self)) < minAngle * 2) {
                 log("EVADE SHELL FAST FORWARD " + self.getId());
-                move.setLeftTrackPower(1D);
-                move.setRightTrackPower(1D);
+                doEvade();
                 if (world.getTick() - lastTimeEvade > EVADE_TIME) {
                     lastTimeEvade = world.getTick();
                 }
@@ -957,13 +956,36 @@ public final class MyStrategy implements Strategy {
         for (Tank tank : world.getTanks()) {
             if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 65 && isAlive(tank)) {
                 log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
-                move.setLeftTrackPower(1D);
-                move.setRightTrackPower(1D);
+                doEvade();
                 unstuck();
                 return true;
             }
         }
         return false;
+    }
+
+    private void doEvade() {
+        move.setLeftTrackPower(1D);
+        move.setRightTrackPower(1D);
+            // bottom
+        if (self.getY() > (world.getHeight() / 3) * 2) {
+            if (self.getAngle() < 0) {
+                move.setLeftTrackPower(1D);
+                move.setRightTrackPower(1D);
+            } else {
+                move.setLeftTrackPower(-1D);
+                move.setRightTrackPower(-1D);
+            }
+            // top
+        } else if (self.getY() < (world.getHeight() / 3) * 1) {
+            if (self.getAngle() < 0) {
+                move.setLeftTrackPower(-1D);
+                move.setRightTrackPower(-1D);
+            } else {
+                move.setLeftTrackPower(1D);
+                move.setRightTrackPower(1D);
+            }
+        }
     }
 
     private boolean checkEvadeArea() {
