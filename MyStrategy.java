@@ -22,6 +22,7 @@ public final class MyStrategy implements Strategy {
     private static final double ONE_DEGREE = PI / 180;
     public static final int CLOSE_TO_BORDER = 90;
     public static final double MATRIX_DENSITY = 25d;
+    private static int tankCount = 0;
 
     double minAngle = ONE_DEGREE / 2;
     double angleToTarget;
@@ -252,12 +253,6 @@ public final class MyStrategy implements Strategy {
                        */
                     log("[shellSpeedTesting] w h" + shell.getWidth() + " " + shell.getHeight());
                     log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
-                    log("[shellSpeedTesting] *********************************");
                 }
             }
         }
@@ -286,7 +281,9 @@ public final class MyStrategy implements Strategy {
 
         shootEnemy();
         // maneuver();
-        if (!pickUpBonus()) {
+        if (tankCount == 1 && world.getTick() < 400) {
+            maneuver();
+        } else if (!pickUpBonus()) {
             maneuver();
         }
     }
@@ -299,19 +296,48 @@ public final class MyStrategy implements Strategy {
             } else {
                 maneuverArea = "LEFT_SIDE";
             }
+            if (tankCount == 1) {
+                if (self.getY() > world.getWidth() / 2) {
+                    maneuverArea += "_BOT";
+                } else {
+                    maneuverArea += "_TOP";
+                }
+            }
+        }
+     //   log("maneuver area: " + maneuverArea);
+        double pointX = 100;
+        double pointY = 100;
+        if (tankCount == 1) {
+            if (maneuverArea.equals("LEFT_SIDE_TOP")) {
+                pointX = 50;
+                pointY = 50;
+            } else if (maneuverArea.equals("RIGHT_SIDE_TOP")) {
+                pointX = world.getWidth() - 50;
+                pointY = 50;
+            } else if (maneuverArea.equals("LEFT_SIDE_BOT")) {
+                pointX = 50;
+                pointY = world.getHeight() - 50;
+            } else if (maneuverArea.equals("RIGHT_SIDE_BOT")) {
+                pointX = world.getWidth() - 50;
+                pointY = world.getHeight() - 50;
+            }
+        } else {
+            if (maneuverArea.equals("RIGHT_SIDE")) {
+                pointX = world.getWidth() - 100;
+            } else {
+                pointX = 100;
+            }
+            pointY = world.getHeight() / (self.getTeammateIndex() + 1.3);
         }
 
-        double pointX;
-        if (maneuverArea.equals("RIGHT_SIDE")) {
-            pointX = world.getWidth() - 100;
-        } else {
-            pointX = 100;
-        }
-        double pointY = world.getHeight() / (self.getTeammateIndex() + 1.3);
-        if (self.getDistanceTo(pointX, pointY) > 250) {
-            log("[maneuver] move to : " + pointX + " " + pointY);
+        if (self.getDistanceTo(pointX, pointY) > 250)
+
+        {
+            //  log("[maneuver] move to : " + pointX + " " + pointY);
             moveTo(pointX, pointY);
-        } else {
+        } else
+
+        {
             turnSideTo(mainTarget);
             //turnTo(mainTarget);
         }
@@ -326,17 +352,17 @@ public final class MyStrategy implements Strategy {
             return;
         }
         double angleToUnit = self.getAngleTo(tanks.get(mainTarget)) / ONE_DEGREE;
-        log("");
-        log("90  - angleToUnit : " + (90 - angleToUnit));
-        log(" angleToUnit : " + angleToUnit);
+        //  log("");
+        //    log("90  - angleToUnit : " + (90 - angleToUnit));
+        //     log(" angleToUnit : " + angleToUnit);
         if (angleToUnit > 0) {
             if (Math.abs(90 - angleToUnit) > 10) {
                 if (angleToUnit > 90) {
                     turnRight();
-                    log("TURN TO RIGHT " + angleToUnit);
+                    //     log("TURN TO RIGHT " + angleToUnit);
                 } else {
                     turnLeft();
-                    log("TURN TO LEFT " + angleToUnit);
+                    //   log("TURN TO LEFT " + angleToUnit);
                 }
             } else {
                 stopMove();
@@ -345,10 +371,10 @@ public final class MyStrategy implements Strategy {
             if (Math.abs(90 + angleToUnit) > 10) {
                 if (angleToUnit > -90) {
                     turnLeft();
-                    log("TURN TO RIGHT " + angleToUnit);
+                    //        log("TURN TO RIGHT " + angleToUnit);
                 } else {
                     turnRight();
-                    log("TURN TO LEFT " + angleToUnit);
+                    //        log("TURN TO LEFT " + angleToUnit);
                 }
             } else {
                 stopMove();
@@ -374,10 +400,10 @@ public final class MyStrategy implements Strategy {
         if (Math.abs(angleToUnit) > minAngle) {
             if (angleToUnit < 0) {
                 turnLeft();
-                log("TURN TO LEFT " + angleToUnit);
+                // log("TURN TO LEFT " + angleToUnit);
             } else {
                 turnRight();
-                log("TURN TO RIGHT" + angleToUnit);
+                //   log("TURN TO RIGHT" + angleToUnit);
             }
         }
     }
@@ -391,17 +417,29 @@ public final class MyStrategy implements Strategy {
         if ((mainTarget != null && !isAlive(tanks.get(mainTarget))) || mainTarget == null) {
             mainTarget = findNewTarget();
         }
+        mainTarget = findOneShootTarget();
         //log("[shootEnemy] mainTarget: " + mainTarget);
         if (mainTarget != null && shootTank(tanks.get(mainTarget))) {
             return;
         }
-        //   log("[shootEnemy] dont shoot mainTarget! have Obstacles!");
+        log("[shootEnemy] dont shoot mainTarget! have Obstacles!");
         if (secondaryTarget == null || !isAlive(tanks.get(secondaryTarget))) {
             secondaryTarget = findNewTarget();
         }
         if (!shootTank(tanks.get(secondaryTarget))) {
             turnTurret(mainTarget);
         }
+    }
+
+    private Long findOneShootTarget() {
+        Long tankId;
+        for (Tank tank : tanks.values()) {
+            if (tank.getCrewHealth() <= 20 && !tank.isTeammate() && isAlive(tank) && !checkObstacle(obstacles, tank) && !tank.getPlayerName().equals("EmptyPlayer")) {
+                tankId = tank.getId();
+                return tankId;
+            }
+        }
+        return mainTarget;
     }
 
     private void turnTurret(Long mainTarget) {
@@ -750,15 +788,15 @@ public final class MyStrategy implements Strategy {
 
     private boolean evade() {
         if (world.getTick() - lastTimeEvade < EVADE_COOLDOWN && world.getTick() - lastTimeEvade > EVADE_TIME) {
-          //  log("[evade] COOLDOWN");
+              log("[evade] COOLDOWN");
             return false;
         }
         if (checkEvadeArea()) {
             return false;
         }
         for (Shell shell : world.getShells()) {
-            if (Math.abs(shell.getAngleTo(self)) < minAngle * 2) {
-             //   log("EVADE SHELL FAST FORWARD " + self.getId());
+            if (Math.abs(shell.getAngleTo(self)) < minAngle * 2 && !checkObstacle(obstacles, shell)) {
+                //   log("EVADE SHELL FAST FORWARD " + self.getId());
                 doEvade();
                 if (world.getTick() - lastTimeEvade > EVADE_TIME) {
                     lastTimeEvade = world.getTick();
@@ -769,8 +807,8 @@ public final class MyStrategy implements Strategy {
         }
 
         for (Tank tank : world.getTanks()) {
-            if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 65 && isAlive(tank)) {
-             //   log("EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
+            if (Math.abs(tank.getTurretAngleTo(self)) < minAngle * 2 && tank.getRemainingReloadingTime() < 65 && isAlive(tank) && !checkObstacle(obstacles, tank)) {
+                log("DO EVADE TURRENT FAST FORWARD " + self.getId() + " remaining reloading time()" + tank.getRemainingReloadingTime() + " max" + tank.getReloadingTime());
                 doEvade();
                 unstuck();
                 return true;
@@ -782,7 +820,7 @@ public final class MyStrategy implements Strategy {
     private void doEvade() {
         move.setLeftTrackPower(1D);
         move.setRightTrackPower(1D);
-            // bottom
+        // bottom
         if (self.getY() > (world.getHeight() / 3) * 2) {
             if (self.getAngle() < 0) {
                 move.setLeftTrackPower(1D);
@@ -843,6 +881,7 @@ public final class MyStrategy implements Strategy {
 
     @Override
     public TankType selectTank(int tankIndex, int teamSize) {
+        tankCount++;
         return TankType.MEDIUM;
     }
 
