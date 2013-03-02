@@ -61,6 +61,20 @@ public final class MyStrategy implements Strategy {
         // positionPrediction();
     }
 
+    private void move() {
+
+        shootTargets();
+        if (move.getFireType() == FireType.NONE) {
+            shootInNonTargetTarget();
+        }
+        // maneuver();
+        if (tankCount == 1 && world.getTick() < 400) {
+            maneuver();
+        } else if (!pickUpBonus()) {
+            maneuver();
+        }
+    }
+
     private void testCoordinates2() {
         Tank tank = tanks.get(mainTarget);
         double y = tank.getY();
@@ -277,14 +291,22 @@ public final class MyStrategy implements Strategy {
         }
     }
 
-    private void move() {
 
-        shootEnemy();
-        // maneuver();
-        if (tankCount == 1 && world.getTick() < 400) {
-            maneuver();
-        } else if (!pickUpBonus()) {
-            maneuver();
+    private void shootInNonTargetTarget() {
+        for (Tank tank : world.getTanks()) {
+            if (!tank.isTeammate() && isAlive(tank) && !tank.getPlayerName().equals("EmptyPlayer")) {
+                Position predictPos = getPredictPosition(tank);
+                if (!checkObstacle(obstacles, predictPos)) {
+
+                }
+                double angleToTarget = self.getTurretAngleTo(predictPos.x, predictPos.y);
+                double distanceToTarget = self.getDistanceTo(predictPos.x, predictPos.y);
+                if (Math.abs(angleToTarget) < minAngle && distanceToTarget < 600) {
+                    move.setFireType(FireType.PREMIUM_PREFERRED);
+                    return;
+                }
+            }
+
         }
     }
 
@@ -304,7 +326,7 @@ public final class MyStrategy implements Strategy {
                 }
             }
         }
-     //   log("maneuver area: " + maneuverArea);
+        //   log("maneuver area: " + maneuverArea);
         double pointX = 100;
         double pointY = 100;
         if (tankCount == 1) {
@@ -413,16 +435,16 @@ public final class MyStrategy implements Strategy {
         move.setRightTrackPower(0.8D);
     }
 
-    private void shootEnemy() {
+    private void shootTargets() {
         if ((mainTarget != null && !isAlive(tanks.get(mainTarget))) || mainTarget == null) {
             mainTarget = findNewTarget();
         }
         mainTarget = findOneShootTarget();
-        //log("[shootEnemy] mainTarget: " + mainTarget);
+        //log("[shootTargets] mainTarget: " + mainTarget);
         if (mainTarget != null && shootTank(tanks.get(mainTarget))) {
             return;
         }
-        log("[shootEnemy] dont shoot mainTarget! have Obstacles!");
+        log("[shootTargets] dont shoot mainTarget! have Obstacles!");
         if (secondaryTarget == null || !isAlive(tanks.get(secondaryTarget))) {
             secondaryTarget = findNewTarget();
         }
@@ -505,7 +527,7 @@ public final class MyStrategy implements Strategy {
         if (checkObstacle(obstacles, predictPos)) {
             //  log("[shootTank]SHOOT CANCEL " + predictPos);
             move.setFireType(FireType.NONE);
-            //    log("[shootEnemy] OBSTACLES set NONE " + checkObstacle(obstacles, predictPos));
+            //    log("[shootTargets] OBSTACLES set NONE " + checkObstacle(obstacles, predictPos));
             return false;
         }
         //  log("[shootTank] TARGET CLEAR TO SHOOT " + predictPos);
@@ -514,10 +536,10 @@ public final class MyStrategy implements Strategy {
         move.setTurretTurn(angleToTarget);
         if (Math.abs(angleToTarget) > minAngle) {
             move.setFireType(FireType.NONE);
-            //     log("[shootEnemy] set NONE CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
+            //     log("[shootTargets] set NONE CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
         } else {
             move.setFireType(FireType.PREMIUM_PREFERRED);
-            //       log("[shootEnemy] set PREMIUM_PREFERRED + CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
+            //       log("[shootTargets] set PREMIUM_PREFERRED + CHECK OBSTACLES: " + checkObstacle(obstacles, predictPos));
             //  drawSnapshot(obstacles, predictPos, new Position(tank.getX(), tank.getY()));
         }
         return true;
@@ -788,7 +810,7 @@ public final class MyStrategy implements Strategy {
 
     private boolean evade() {
         if (world.getTick() - lastTimeEvade < EVADE_COOLDOWN && world.getTick() - lastTimeEvade > EVADE_TIME) {
-              log("[evade] COOLDOWN");
+            log("[evade] COOLDOWN");
             return false;
         }
         if (checkEvadeArea()) {
